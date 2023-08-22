@@ -11,8 +11,9 @@ def blue(string):
 # colorama
 init()
 
-DEBUG = False
-def print_debug(*args, **kwargs):
+DEBUG = True
+def print_debug(*args, level=1, **kwargs):
+    #TODO: add levels of debug
     if DEBUG:
         print(Fore.YELLOW+"[DEBUG]"+Style.RESET_ALL, *args, **kwargs)
 

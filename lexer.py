@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Union
+from lprint import print_debug, print_error, red, blue, yellow
 
 class TokenType(Enum):
     WORD = auto()
@@ -54,6 +55,12 @@ class Lexer:
             self.current_char = self.text[self.pointer]
         else:
             self.current_char = None
+    def peek(self):
+        pointer = self.pointer + 1
+        if len(self.text) > pointer:
+            return self.text[pointer]
+        else:
+            return None
     def get_word(self):
         string = ""
         while len(self.text) > self.pointer and (self.current_char.isalpha() or self.current_char=="_"):
@@ -141,7 +148,17 @@ class Lexer:
             if self.current_char in "+-/*":
                 token = self.get_math_token()
                 return token
-
-            raise Exception(f"{self.current_char} is couldn't be lexed")
+            if self.current_char == "<" and self.peek() == "<":
+                self.comment()
+                continue
+            ex = f"You shouldn't be here: {red(f'{self.current_char}')}"
+            raise Exception(ex)
         return Token(TokenType.EOF, None)
+    def comment(self):
+        while not(self.current_char == ">" and self.peek() == ">"):
+            self.advance()
+        self.advance() # past >
+        self.advance() # past other >
+
+
 

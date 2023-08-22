@@ -4,19 +4,27 @@
 """
 
 import sys
+import os
 import tkinter as tk
 from tkinter import ttk
 from tkinter import (N, S, E, W, PhotoImage)
+from tools import interpret_file
+from lprint import print_debug, print_error, red, blue, yellow
 
 CARD_IMAGES = list()
+PLACEHOLDER_CARD = "cards/card.png"
 class Card:
     """
         A class to contain Cards
     """
-    def __init__(self, root, name="card", imagepath="card.png", *, command=None, gameaction=None):
+    def __init__(self, root, name="card", imagepath=PLACEHOLDER_CARD, *, command=None, gameaction=None):
         self.root = root
         self.name = name
         self.imagepath = imagepath
+        if not os.path.exists(imagepath):
+            print_error(f"{imagepath} doesn't exists")
+            sys.exit()
+
         self.image = None
         self.command = command
         self.gameaction = gameaction
@@ -90,10 +98,15 @@ class App:
         self.root.rowconfigure(2)# weight=1)
         # self.root.grid(column=0, row=0, sticky=(N,E,W,S))
         # self.root.columnconfigure(0, weight=1)
+
+        self.frame_pack_self = None
+        self.frame_pack_board = None
+        self.frame_pack_enemy = None
+
         self.photoimage_objects = list()
         self.initilaze_game()
         window.mainloop()
-    def card_label(self, frame, imagepath="card.png", *, command=None):
+    def card_label(self, frame, imagepath=PLACEHOLDER_CARD, *, command=None):
         """
             frame: ttk.Frame = root frame of label
             imagepath: str = image path in string
@@ -161,6 +174,40 @@ class App:
         self.board_card = self.card_label(other)
         self.board_card.pack(side=tk.LEFT)
         frame_board.grid(column=0, row=1, sticky=(N, S, E, W))
+    def get_hand_from_file(self, filename):
+        interpreter = interpret_file(filename)
+        return interpreter.global_variables["Cards"]
+    def prepare_hand(self):
+        hand = self.get_hand_from_file("try.toc")
+        print_debug(hand)
+        for card in hand:
+            new_card = hand[card]
+            card_name = new_card["name"]
+            card_image = new_card["image"]
+            card_command = new_card.get("command", None)
+            card = (card_name, card_image, card_command)
+            self.pack_to_self(card)
+    def pack_to_self(self, card: (str, str, str)):
+        """card_label(frame,
+                      imagepath="card.png", *,
+                      command=None)"""
+        frame = self.frame_pack_self
+        name = card[0]
+        imagepath = card[1]
+        command = card[2]
+        def commandl(*args):
+            if command: command()
+            self.frame_self_card_click_event(*args)
+        mycommand = ("<Button-1>", commandl)
+        card_object = Card(frame, name, imagepath)
+        card_label = self.card_label(frame, imagepath, command=mycommand)
+        card_label.name = name
+        card_label.imagepath = imagepath
+        self.card_container.add(card_label)
+        print_debug(f"{frame=}, {imagepath=}, {command=}")
+        card_label.pack(side=tk.LEFT)
+
+
     def initilaze_self(self):
         """
             Create the frame for the board(frame_enemy) with a height of 1/3. and full width
@@ -169,17 +216,20 @@ class App:
                                height=self.height//3,
                                width=self.width)
         other = ttk.Frame(frame_self)
+        self.frame_pack_self = other
         other.pack()
-        frame_self.bind("<Button-1>",
-                        lambda *args: self.card_label(other, "card2.png").pack(side=tk.LEFT))
-
-        command = ("<Button-1>", self.frame_self_card_click_event)
-        self.card_label(other, "card.png", command=command).pack(side=tk.LEFT)
-        self.card_label(other, "card2.png", command=command).pack(side=tk.LEFT)
+        self.prepare_hand()
+#        frame_self.bind("<Button-1>",
+#                        lambda *args: self.card_label(other, "card2.png").pack(side=tk.LEFT))
+#
+#        command = ("<Button-1>", self.frame_self_card_click_event)
+#        self.card_label(other, "card.png", command=command).pack(side=tk.LEFT)
+#        self.card_label(other, "card2.png", command=command).pack(side=tk.LEFT)
         frame_self.grid(column=0, row=2, sticky=(N, S, E, W))
     def frame_self_card_click_event(self, *args):
         """
-            A function to remove the card from hand and create the same and add it to the board
+            A function to remove the card from hand and
+            create the same and add it to the board
         """
         event = args[0]
         self.pack_to_board(event.widget)

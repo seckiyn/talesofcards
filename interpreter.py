@@ -113,8 +113,3 @@ if __name__ == "__main__":
     interpreter = Interpreter(parser)
     interpreter.interpret()
     print(interpreter.global_variables)
-
-
-
-
-

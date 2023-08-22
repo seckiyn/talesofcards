@@ -10,7 +10,9 @@ TEST = """\
 new Card card_name {
     name: "doofenshmirtz",
     image: "card2.png"
-}"""
+}
+<< This is a comment ya know >>
+"""
 
 
 # print_debug(TEST)
@@ -136,9 +138,11 @@ class Parser:
     def get_tokens(self):
         token_list = list()
         token = self.lexer.get_next_token()
+        print_debug(blue(token))
         while token.token_value:
             token_list.append(token)
             token = self.lexer.get_next_token()
+            print_debug(blue(token))
         token_list.append(token)
         return token_list
             
@@ -277,7 +281,7 @@ def main():
 
 
 
-# if __name__ == "__main__": main()
+if __name__ == "__main__": main()
 
 
 # print(AST_COUNT)
