@@ -131,18 +131,18 @@ class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
         self.tokens = self.get_tokens()
-        print_debug(*self.tokens, sep="\n")
+        # print_debug(*self.tokens, sep="\n")
         self.current_token = None
         self.position = -1
         self.next_token()
     def get_tokens(self):
         token_list = list()
         token = self.lexer.get_next_token()
-        print_debug(blue(token))
+        # print_debug(blue(token))
         while token.token_value:
             token_list.append(token)
             token = self.lexer.get_next_token()
-            print_debug(blue(token))
+            # print_debug(blue(token))
         token_list.append(token)
         return token_list
             
@@ -156,7 +156,7 @@ class Parser:
 
         self.current_token = self.tokens[self.position]
     def eat(self, token_type):
-        print_debug(blue("[Token]"), self.current_token)
+        # print_debug(blue("[Token]"), self.current_token)
         if self.current_token.token_type == token_type:
             self.next_token()
         else:
@@ -170,24 +170,24 @@ class Parser:
         while self.current_token.token_type in (
                 TokenType.WORD,
                 TokenType.NEW):
-            print_debug(f"I'm looking for programs: {self.current_token}")
+            # print_debug(f"I'm looking for programs: {self.current_token}")
             if self.current_token.token_type == TokenType.WORD:
-                print_debug("I've found a WORD token")
+                # print_debug("I've found a WORD token")
                 assert False, (red("VARIABLES NOT IMPLEMENTED YET"))
                 continue
             if self.current_token.token_type == TokenType.NEW:
                 self.eat(TokenType.NEW)
                 ast_list.append(self.new())
-                print_debug("I've found a NEW token")
+                # print_debug("I've found a NEW token")
                 continue
             assert False, "You shouldn't be here"
 
-        print_debug(f"{ast_list =}")
+        # print_debug(f"{ast_list =}")
         program = Program(ast_list)
         return program
 
     def new(self):
-        print_debug("Adding new")
+        # print_debug("Adding new")
         if self.current_token.token_type == TokenType.WORD:
             token = self.current_token
             self.eat(TokenType.WORD)
@@ -202,7 +202,7 @@ class Parser:
         name_block = self.name_block()
         return Card(card_name, name_block)
     def name_block(self):
-        print_debug(blue("[EATING]"), "OPEN_CBRACKET")
+        # print_debug(blue("[EATING]"), "OPEN_CBRACKET")
         self.eat(TokenType.OPEN_CBRACKET)
         """(name:exp) (,name:exp) *"""
         names = list()

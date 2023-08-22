@@ -34,7 +34,7 @@ newer:3-8
 """
 class Walker:
     def walk(self, ast):
-        print_debug("AST:", ast)
+        # print_debug("AST:", ast)
         if ast is None:
             print_debug("="*100)
         ast_name = "walk_" + type(ast).__name__
@@ -51,12 +51,12 @@ class Interpreter(Walker):
     def interpret(self):
         tree = self.parser.parse()
         self.walk(tree)
-        print_debug(self.global_variables)
+        # print_debug(self.global_variables)
     def walk_BinOp(self, ast):
         left = self.walk(ast.left_token)
         right = self.walk(ast.right_token)
         operation = ast.op_token.token_type
-        print_debug(f"{left=}, {right=}")
+        # print_debug(f"{left=}, {right=}")
         if operation == TokenType.PLUS:
             return left + right
         if operation == TokenType.MINUS:
