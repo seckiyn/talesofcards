@@ -21,6 +21,14 @@ class TokenType(Enum):
 
     EOF = auto()
 
+    PLUS = auto()
+    MINUS = auto()
+    MUL = auto()
+    DIV = auto()
+
+    LPAREN = auto()
+    RPAREN = auto()
+
 
 @dataclass
 class Token:
@@ -61,6 +69,32 @@ class Lexer:
             integer += self.current_char
             self.advance()
         return Token(TokenType.INTEGER, integer)
+    def get_string(self):
+        string = ""
+        self.advance()
+        while len(self.text) > self.pointer and self.current_char != '"':
+            string += self.current_char
+            self.advance()
+        self.advance()
+        return string
+    def get_math_token(self):
+        if self.current_char == "+":
+            token = Token(TokenType.PLUS, self.current_char)
+            self.advance()
+            return token
+        if self.current_char == "-":
+            token = Token(TokenType.MINUS, self.current_char)
+            self.advance()
+            return token
+        if self.current_char == "*":
+            token = Token(TokenType.MUL, self.current_char)
+            self.advance()
+            return token
+        if self.current_char == "/":
+            token = Token(TokenType.DIV, self.current_char)
+            self.advance()
+            return token
+
     def get_next_token(self):
         while self.current_char != None:
             # print(self.current_char)
@@ -82,8 +116,8 @@ class Lexer:
                 self.advance()
                 return token
             if self.current_char == '"':
-                token = Token(TokenType.STR, self.current_char)
-                self.advance()
+                string = self.get_string()
+                token = Token(TokenType.STR, string)
                 return token
             if self.current_char == ",":
                 token = Token(TokenType.SEP, self.current_char)
@@ -96,7 +130,18 @@ class Lexer:
                 token = Token(TokenType.DOT, self.current_char)
                 self.advance()
                 return token
-            
-            raise Exception(f"{self.current_char} is couldn't be lexed")
+            if self.current_char == "(":
+                token = Token(TokenType.LPAREN, self.current_char)
+                self.advance()
+                return token
+            if self.current_char == ")":
+                token = Token(TokenType.RPAREN, self.current_char)
+                self.advance()
+                return token
+            if self.current_char in "+-/*":
+                token = self.get_math_token()
+                return token
 
+            raise Exception(f"{self.current_char} is couldn't be lexed")
+        return Token(TokenType.EOF, None)
 

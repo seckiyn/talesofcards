@@ -1,16 +1,19 @@
+import sys
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Union, List
 from lexer import Lexer, TokenType, Token
+from lprint import print_debug, red, blue, yellow
+
 
 TEST = """\
 new Card card_name {
     name: "doofenshmirtz",
-    image: "card2.png",
+    image: "card2.png"
 }"""
 
 
-print(TEST)
+# print_debug(TEST)
 
 """
 PROGRAM: (NEW|SETVARIABLE|EXP)
@@ -113,24 +116,30 @@ class NameBlock(AST):
 AST_COUNT += 1
 @dataclass
 class Card(AST):
+    card_name: str
     name_block: Union[NameBlock, TokenType]
+
+AST_COUNT += 1
+@dataclass
+class String(AST):
+    token: Union[Token, AST]
 
 
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
         self.tokens = self.get_tokens()
-        print(*self.tokens, sep="\n")
+        print_debug(*self.tokens, sep="\n")
         self.current_token = None
         self.position = -1
         self.next_token()
-        self.program()
     def get_tokens(self):
         token_list = list()
         token = self.lexer.get_next_token()
-        while token:
+        while token.token_value:
             token_list.append(token)
             token = self.lexer.get_next_token()
+        token_list.append(token)
         return token_list
             
     def next_token(self):
@@ -139,16 +148,17 @@ class Parser:
         """
         self.position += 1
         if self.position >= len(self.tokens):
-            print(f"Tokens of these makes the wrong {self.tokens}")
+            print_debug(f"Tokens of these makes the wrong {self.tokens}")
 
         self.current_token = self.tokens[self.position]
     def eat(self, token_type):
+        print_debug(blue("[Token]"), self.current_token)
         if self.current_token.token_type == token_type:
             self.next_token()
         else:
             ctoken = self.current_token.token_type
-            ex = f"{token_type} was expected but {ctoken} found!"
-            raise Exception
+            ex = f"{red(token_type)} was expected but {red(ctoken)} found!"
+            raise Exception(ex)
     def parse(self):
         return self.program()
     def program(self):
@@ -156,18 +166,24 @@ class Parser:
         while self.current_token.token_type in (
                 TokenType.WORD,
                 TokenType.NEW):
-            print(f"I'm looking for programs: {self.current_token}")
+            print_debug(f"I'm looking for programs: {self.current_token}")
             if self.current_token.token_type == TokenType.WORD:
-                ...
+                print_debug("I've found a WORD token")
+                assert False, (red("VARIABLES NOT IMPLEMENTED YET"))
+                continue
             if self.current_token.token_type == TokenType.NEW:
                 self.eat(TokenType.NEW)
                 ast_list.append(self.new())
+                print_debug("I've found a NEW token")
+                continue
+            assert False, "You shouldn't be here"
 
+        print_debug(f"{ast_list =}")
         program = Program(ast_list)
         return program
 
     def new(self):
-        print("Adding new")
+        print_debug("Adding new")
         if self.current_token.token_type == TokenType.WORD:
             token = self.current_token
             self.eat(TokenType.WORD)
@@ -179,15 +195,89 @@ class Parser:
         token = self.current_token
         self.eat(TokenType.WORD)
         card_name = token.token_value
+        name_block = self.name_block()
+        return Card(card_name, name_block)
+    def name_block(self):
+        print_debug(blue("[EATING]"), "OPEN_CBRACKET")
+        self.eat(TokenType.OPEN_CBRACKET)
+        """(name:exp) (,name:exp) *"""
+        names = list()
+        names.append(self.name())
+        while self.current_token.token_type == TokenType.SEP:
+            self.eat(TokenType.SEP)
+            names.append(self.name())
+        self.eat(TokenType.CLOSE_CBRACKET)
+        return NameBlock(names)
+    def name(self):
+        last_token = self.current_token
+        self.eat(TokenType.WORD)
+        name = last_token.token_value
+        self.eat(TokenType.COLON)
+        exp = self.exp()
+        return Name(name,exp)
+    def exp(self):
+        """ exp: (STR|INT|VARIABLE) ((PLUS|MINUS|MUL|DIV) (STR|INT|VARIABLE))*"""
+        node = self.term()
+        while self.current_token.token_type in (
+                TokenType.PLUS,
+                TokenType.MINUS):
+            token = self.current_token
+            if token.token_type == TokenType.PLUS:
+                self.eat(TokenType.PLUS)
+            if token.token_type == TokenType.MINUS:
+                self.eat(TokenType.MINUS)
+            node = BinOp(node, token, self.factor())
+        return node
+
+    def term(self):
+        node = self.factor()
+        while self.current_token.token_type in (
+                TokenType.MUL,
+                TokenType.DIV):
+            token = self.current_token
+            if token.token_type == TokenType.MUL:
+                self.eat(TokenType.MUL)
+            if token.token_type == TokenType.DIV:
+                self.eat(TokenType.DIV)
+            node = BinOp(node, token, self.factor())
+        return node
+    def factor(self):
+        if self.current_token.token_type == TokenType.INTEGER:
+            token = self.current_token
+            self.eat(TokenType.INTEGER)
+            return Integer(token)
+        if self.current_token.token_type == TokenType.PLUS:
+            token = self.current_token
+            self.eat(TokenType.PLUS)
+            return UnaryOp(token, self.factor())
+        if self.current_token.token_type == TokenType.MINUS:
+            token = self.current_token
+            self.eat(TokenType.MINUS)
+            return UnaryOp(token, self.factor())
+        if self.current_token.token_type == TokenType.LPAREN:
+            token = self.current_token
+            self.eat(TokenType.LPAREN)
+            node = self.exp()
+            self.eat(TokenType.RPAREN)
+            return node
+        if self.current_token.token_type == TokenType.STR:
+            token = self.current_token
+            self.eat(TokenType.STR)
+            return String(token)
 
 
 
 
 
 
-if __name__ == "__main__":
+def main():
     lexer = Lexer(TEST)
     parser = Parser(lexer)
     print(parser.parse())
-    
 
+
+
+# if __name__ == "__main__": main()
+
+
+# print(AST_COUNT)

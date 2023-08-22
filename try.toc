@@ -1,0 +1,9 @@
+new Card hello {
+    name: "doofenshmirtz",
+    image: "card2.png"
+}
+
+new Card hamza {
+    name: "HamzaOfHamzas",
+    image: "card.png"
+}
