@@ -167,12 +167,23 @@ def adjust_surfaces(surface: pygame.Surface, surf: Iterable[Card]) -> None:
     for x_cord, card in zip(x_cords, surf):
         card.rect.center = x_cord, 5 * (HEIGHT // 6)
 
+
+# Pygame
+screen = pygame.display.set_mode(WINDOW_SIZE)
+clock = pygame.time.Clock()
+delta_time = 0
+sprite_group = pygame.sprite.Group()
+board_sprite_group = pygame.sprite.Group()
+
+def click_event_player(card):
+    # TODO: add a last card list
+    board_sprite_group.empty()
+    card.kill()
+    card.move_to(WIDTH//2, HEIGHT//2)
+    board_sprite_group.add(card)
+
 def Game() -> None:
-    screen = pygame.display.set_mode(WINDOW_SIZE)
-    clock = pygame.time.Clock()
     running = True
-    delta_time = 0
-    sprite_group = pygame.sprite.Group()
     card = Card("card", "./cards/card.png")
     card2 = Card("card2", "./cards/card2.png")
     card2.rect.center = WIDTH // 2, HEIGHT // 2
@@ -203,7 +214,8 @@ def Game() -> None:
                 """
                 mouse_pos = event.pos
                 for mcard in sprite_group:
-                    mcard.check_mouse_up(mouse_pos)
+                    if mcard.check_mouse_up(mouse_pos):
+                        click_event_player(mcard)
 
 
 
@@ -220,6 +232,8 @@ def Game() -> None:
         # redraw
         adjust_surfaces(screen, sprite_group)
         sprite_group.draw(screen)
+        print(board_sprite_group)
+        board_sprite_group.draw(screen)
         # draw_circles(screen, spread_card(5, WIDTH))
         # draw_rects(screen, spread_card(card_count, WIDTH))
         draw_guide_lines(screen)

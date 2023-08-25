@@ -28,10 +28,18 @@ class Card(sprite.Sprite):
             print_error(f"{imagepath} doesn't exists")
             sys.exit()
 
-        self.command = command
-        self.command = lambda: print(f"My name is {self.name}")
+        if command:
+            self.command = command
         self.gameaction = gameaction
-    def check_mouse_up(self, mouse_pos):
+        self.to_update = list()
+    def command(self, *args, **kwargs):
+        print(f"My name is {self.name}")
+    def move_to(self, x, y):
+        self.rect.center = (x, y)
+
+    def update(self):
+        ...
+    def check_mouse_up(self, mouse_pos, *args, **kwargs):
         if self.rect.collidepoint(mouse_pos):
-            self.command()
+            return True
 
