@@ -5,7 +5,9 @@
 
 import sys
 import os
+import random
 import tkinter as tk
+from typing import Union, Tuple
 from tkinter import ttk
 from tkinter import (N, S, E, W, PhotoImage)
 from tools import interpret_file
@@ -69,8 +71,15 @@ class CardContainer:
             if card.imagepath == imagepath:
                 return card
         return "No Card" # Return an error in the future
+    def get_random(self):
+        name = random.choice(self.names)
+        return self.get_by_name(name)
 
 
+class CardHand:
+    """ CardHolder with removability """
+    def __init__(self):
+        pass
 
 
 
@@ -102,6 +111,9 @@ class App:
         self.frame_pack_self = None
         self.frame_pack_board = None
         self.frame_pack_enemy = None
+
+        self.frame_pack_gameinfo = None
+        self.frame_pack_pullcard = None
 
         self.photoimage_objects = list()
         self.initilaze_game()
@@ -168,12 +180,27 @@ class App:
         frame_board = ttk.Frame(self.root, style="FrameBoard.TFrame",
                                 height=self.height//3,
                                 width=self.width)
-        other = ttk.Frame(frame_board)
+        other = ttk.Frame(frame_board, style="FrameBoard.TFrame")
+        self.frame_pack_gameinfo = ttk.Frame(frame_board, style="FrameEnemy.TFrame")
+        self.frame_pack_pullcard = ttk.Frame(frame_board, style="FrameSelf.TFrame")
+        self.frame_pack_gameinfo.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.initilaze_gameinfo()
         self.board_frame_other = other
-        other.pack()
+        other.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.frame_pack_pullcard.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.initilaze_pullcard()
         self.board_card = self.card_label(other)
-        self.board_card.pack(side=tk.LEFT)
+        self.board_card.pack()
         frame_board.grid(column=0, row=1, sticky=(N, S, E, W))
+    def initilaze_gameinfo(self):
+        frame = self.frame_pack_gameinfo
+        card = self.card_label(frame)
+        card.pack()
+    def initilaze_pullcard(self):
+        frame = self.frame_pack_pullcard
+        card = self.card_label(frame)
+        self.pack_to_self(self.card_container.get_random())
+        card.pack()
     def get_hand_from_file(self, filename):
         interpreter = interpret_file(filename)
         return interpreter.global_variables["Cards"]
@@ -187,14 +214,22 @@ class App:
             card_command = new_card.get("command", None)
             card = (card_name, card_image, card_command)
             self.pack_to_self(card)
-    def pack_to_self(self, card: (str, str, str)):
+    def pack_to_self(self, card: Union[Tuple[str, str, str], Card]):
         """card_label(frame,
                       imagepath="card.png", *,
                       command=None)"""
         frame = self.frame_pack_self
-        name = card[0]
-        imagepath = card[1]
-        command = card[2]
+        name = None
+        imagepath = None
+        command = None
+        if type(card) == Card:
+            name = card.name
+            imagepath = card.imagepath
+            command = card.command
+        else:
+            name = card[0]
+            imagepath = card[1]
+            command = card[2]
         def commandl(*args):
             if command: command()
             self.frame_self_card_click_event(*args)
@@ -244,7 +279,7 @@ class App:
         old = self.card_container.get_by_name(card.name)
         cardobject = Card(self.board_frame_other, old.name, old.imagepath)
         self.board_card = cardobject.create()
-        self.board_card.pack(side=tk.LEFT)
+        self.board_card.pack()
         self.board_card.pack()
 
 

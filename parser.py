@@ -161,7 +161,9 @@ class Parser:
             self.next_token()
         else:
             ctoken = self.current_token.token_type
-            ex = f"{red(token_type)} was expected but {red(ctoken)} found!"
+            token = self.current_token
+            row, column = token.row, token.column
+            ex = f"({row}:{column}){red(token_type)} was expected but {red(ctoken)} found!"
             raise Exception(ex)
     def parse(self):
         return self.program()

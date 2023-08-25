@@ -12,3 +12,8 @@ new Card bomba {
     name: "Bomb",
     image: "cards/bomb.png"
 }
+
+new Card bomba2 {
+    name: "Bomb2",
+    image: "cards/bomb.png"
+}
