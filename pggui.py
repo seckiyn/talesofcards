@@ -1,6 +1,8 @@
 import pygame
-from typing import Tuple
+from random import choice as c
+from typing import Tuple, Iterable
 from pygame import Rect
+from card import Card
 
 pygame.init()
 """
@@ -160,6 +162,10 @@ def draw_rects(surface, x_cords: Tuple[int, ...]) -> None:
         pygame.draw.rect(surface, "red", rect)
 
 
+def adjust_surfaces(surface: pygame.Surface, surf: Iterable[Card]) -> None:
+    x_cords = spread_card(len(surf), WIDTH)
+    for x_cord, card in zip(x_cords, surf):
+        card.rect.center = x_cord, 5 * (HEIGHT // 6)
 
 def Game() -> None:
     screen = pygame.display.set_mode(WINDOW_SIZE)
@@ -167,11 +173,11 @@ def Game() -> None:
     running = True
     delta_time = 0
     sprite_group = pygame.sprite.Group()
-    card = Sprite("./cards/card.png")
-    card2 = Sprite("./cards/card2.png")
+    card = Card("card", "./cards/card.png")
+    card2 = Card("card2", "./cards/card2.png")
     card2.rect.center = WIDTH // 2, HEIGHT // 2
     sprite_group.add((card, card2))
-    card_count = 1
+    card_count = 2
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -180,19 +186,42 @@ def Game() -> None:
                 if event.key == pygame.K_ESCAPE:
                     running = False
                 if event.key == pygame.K_k:
+                    if card_count < 8:
+                        cardname = c(['bomb', 'card', 'card2'])
+                        imagepath =  f"./cards/{cardname}.png"
+                        tmp_card = Card("bomb", imagepath)
+                        sprite_group.add(tmp_card)
                     card_count += 1
+            if event.type == pygame.MOUSEBUTTONUP:
+                """
+                    Iterate over sprite_group
+                        Check if position is inside the rect
+                            Yes
+                                Call the command function of card
+                            No
+                                Continue
+                """
+                mouse_pos = event.pos
+                for mcard in sprite_group:
+                    mcard.check_mouse_up(mouse_pos)
+
+
+
 
 
         # Flush the screen
         screen.fill("darkred")
-        sprite_group.draw(screen)
-        # draw_circles(screen, spread_card(5, WIDTH))
-        draw_rects(screen, spread_card(card_count, WIDTH))
+
+
 
 
         # get input
         # handle input
         # redraw
+        adjust_surfaces(screen, sprite_group)
+        sprite_group.draw(screen)
+        # draw_circles(screen, spread_card(5, WIDTH))
+        # draw_rects(screen, spread_card(card_count, WIDTH))
         draw_guide_lines(screen)
         pygame.display.flip()
 
