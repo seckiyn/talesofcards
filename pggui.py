@@ -2,9 +2,11 @@ import pygame
 from random import choice as c
 from typing import Tuple, Iterable
 from pygame import Rect
-from card import Card
+from gameobjects import Card, GameContainer, HealthSprite, ShieldSprite
 
 pygame.init()
+pygame.font.init()
+
 """
 self.width = 1500
 self.height = 750
@@ -31,7 +33,7 @@ def draw_line(surface, cord1, cord2, width=3, color="purple"):
 def draw_guide_lines(surface):
     HALFWIDTH:int  = WIDTH // 2
     THIRDHEIGHT:int = HEIGHT // 3
-    # Board line
+    # Board-Top Horizontal line
     cord1_x = 0
     cord1_y = THIRDHEIGHT
     cord2_x = WIDTH
@@ -40,7 +42,7 @@ def draw_guide_lines(surface):
     cord2 = cord2_x, cord2_y
     draw_line(surface, cord1, cord2)
 
-    # Board line
+    # Board-Bottom Horizontal line
     cord1_x = 0
     cord1_y = 2 * THIRDHEIGHT
     cord2_x = WIDTH
@@ -85,6 +87,51 @@ def draw_guide_lines(surface):
     cord2 = cord2_x, cord2_y
     draw_line(surface, cord1, cord2, 1, "green")
 
+    # Left Vertical line
+    cord1_x = HALFWIDTH // 2
+    cord1_y = 0
+    cord2_x = cord1_x
+    cord2_y = HEIGHT
+    cord1 = cord1_x, cord1_y
+    cord2 = cord2_x, cord2_y
+    draw_line(surface, cord1, cord2, 1, "green")
+
+    # Right Vertical line
+    cord1_x = 3 * (HALFWIDTH // 2)
+    cord1_y = 0
+    cord2_x = cord1_x
+    cord2_y = HEIGHT
+    cord1 = cord1_x, cord1_y
+    cord2 = cord2_x, cord2_y
+    draw_line(surface, cord1, cord2, 1, "green")
+
+    # LeftSide-Left Vertical line
+    cord1_x = (HALFWIDTH // 2) // 2
+    cord1_y = 0
+    cord2_x = cord1_x
+    cord2_y = HEIGHT
+    cord1 = cord1_x, cord1_y
+    cord2 = cord2_x, cord2_y
+    draw_line(surface, cord1, cord2, 1, "lightblue")
+
+
+    # Board-Bottom Horizontal line - Board Guide Line
+    cord1_x = 0
+    cord1_y = 7 * (THIRDHEIGHT // 4)
+    cord2_x = WIDTH
+    cord2_y = cord1_y
+    cord1 = cord1_x, cord1_y
+    cord2 = cord2_x, cord2_y
+    draw_line(surface, cord1, cord2, 1, color="lightblue")
+
+    # Board-TOP Horizontal line - Board Guide Line
+    cord1_x = 0
+    cord1_y = 5 * (THIRDHEIGHT // 4)
+    cord2_x = WIDTH
+    cord2_y = cord1_y
+    cord1 = cord1_x, cord1_y
+    cord2 = cord2_x, cord2_y
+    draw_line(surface, cord1, cord2, 1, color="lightblue")
 
 def spread_card(card_count: int, size: float, cardsize=157, padding=10) -> Tuple[int, ...]:
     """
@@ -120,6 +167,7 @@ def spread_card(card_count: int, size: float, cardsize=157, padding=10) -> Tuple
     mostleft = left - padding - cardsize
     mostright = right + padding + cardsize
     return mostleft, left, *middles, right, mostright
+
 """
     if card_count == 4:
         left, right = spread_card(2, size)
@@ -163,6 +211,8 @@ def draw_rects(surface, x_cords: Tuple[int, ...]) -> None:
 
 
 def adjust_surfaces(surface: pygame.Surface, surf: Iterable[Card]) -> None:
+    if not surf:
+        return
     x_cords = spread_card(len(surf), WIDTH)
     for x_cord, card in zip(x_cords, surf):
         card.rect.center = x_cord, 5 * (HEIGHT // 6)
@@ -174,14 +224,23 @@ clock = pygame.time.Clock()
 delta_time = 0
 sprite_group = pygame.sprite.Group()
 board_sprite_group = pygame.sprite.Group()
+gui_sprite_group = pygame.sprite.Group()
+game_container = GameContainer(WIDTH, HEIGHT)
 
-def click_event_player(card):
+
+def click_event_player(card: Card):
     # TODO: add a last card list
     board_sprite_group.empty()
     card.kill()
     card.move_to(WIDTH//2, HEIGHT//2)
+    card.gameaction()
     board_sprite_group.add(card)
 
+def create_gui() -> Tuple[Sprite, Sprite]:
+    """
+        Will return health and shield sprites
+    """
+    ...
 def Game() -> None:
     running = True
     card = Card("card", "./cards/card.png")
@@ -189,6 +248,12 @@ def Game() -> None:
     card2.rect.center = WIDTH // 2, HEIGHT // 2
     sprite_group.add((card, card2))
     card_count = 2
+    health = HealthSprite(game_container, fontsize=80)
+    health.place_health()
+    gui_sprite_group.add(health)
+    shield = ShieldSprite(game_container, fontsize=80)
+    shield.place_shield()
+    gui_sprite_group.add(shield)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -203,6 +268,10 @@ def Game() -> None:
                         tmp_card = Card("bomb", imagepath)
                         sprite_group.add(tmp_card)
                     card_count += 1
+                if event.key == pygame.K_m:
+                    print(f"Before {game_container.health}")
+                    game_container.set_health(game_container.health - 10)
+                    print(f"After {game_container.health}")
             if event.type == pygame.MOUSEBUTTONUP:
                 """
                     Iterate over sprite_group
@@ -232,8 +301,9 @@ def Game() -> None:
         # redraw
         adjust_surfaces(screen, sprite_group)
         sprite_group.draw(screen)
-        print(board_sprite_group)
+        # print(board_sprite_group)
         board_sprite_group.draw(screen)
+        gui_sprite_group.draw(screen)
         # draw_circles(screen, spread_card(5, WIDTH))
         # draw_rects(screen, spread_card(card_count, WIDTH))
         draw_guide_lines(screen)
