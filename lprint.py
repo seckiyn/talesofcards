@@ -6,7 +6,9 @@ def red(string):
 def yellow(string):
     return Fore.YELLOW + str(string) + Style.RESET_ALL
 def blue(string):
-    return Fore.BLUE + str(string)+ Style.RESET_ALL
+    return Fore.BLUE + str(string) + Style.RESET_ALL
+def green(string):
+    return Fore.GREEN + str(string) + Style.RESET_ALL
 
 # colorama
 init()

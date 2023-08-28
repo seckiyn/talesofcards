@@ -6,7 +6,7 @@ import pygame
 from random import choice as c
 from typing import Tuple, Iterable
 from pygame import Rect
-from gameobjects import Card, GameContainer, HealthSprite, ShieldSprite
+from gameobjects import Card, GameContainer, HealthSprite, ShieldSprite, tests
 
 pygame.init()
 pygame.font.init()
