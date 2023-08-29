@@ -17,7 +17,7 @@ def get_path(path="dir"):
 
 
 
-def interpret_file(filename: str) -> dict:
+def interpret_file(filename: str) -> Interpreter:
     print_debug(f"Filename is {filename}", level="high")
     if not filename.endswith(".toc"):
         print_error("This is not a *.toc file")

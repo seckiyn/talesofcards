@@ -7,6 +7,8 @@ import pygame
 from pygame import  sprite, image
 from os.path import join
 from lprint import print_error, print_debug, red, green, blue
+from tools import interpret_file
+
 
 
 
@@ -46,6 +48,32 @@ class Card(sprite.Sprite):
     def check_mouse_up(self, mouse_pos, *args, **kwargs):
         if self.rect.collidepoint(mouse_pos):
             return True
+    @classmethod
+    def from_toc(cls, filename):
+        """
+            Construct list of cards from toc file
+        """
+        from_cards = list()
+        interpreter_object = interpret_file(filename)
+        glob_vars = interpreter_object.global_variables
+        cards = glob_vars["Cards"]
+        default_command = None
+        default_gameaction = lambda *args, **kwargs: None # Void func
+        for card in cards.items():
+            card_name: str
+            card: dict
+            card_name, card = card
+            name = card["name"]
+            image = card["image"]
+            command = card.get("command", default_command)
+            gameaction = card.get("gameaction", default_gameaction)
+            new_card = cls(name, image, command=command, gameaction=gameaction)
+            from_cards.append(new_card)
+        return from_cards
+
+
+# print(Card.from_toc("try.toc"))
+
 
 class TocBaseException(Exception):
     __module__ = "builtins"

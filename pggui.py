@@ -244,17 +244,28 @@ def Game() -> None:
         Start the game
     """
     running = True
-    card = Card("card", "./cards/card.png")
-    card2 = Card("card2", "./cards/card2.png")
-    card2.rect.center = WIDTH // 2, HEIGHT // 2
-    sprite_group.add((card, card2))
-    card_count = 2
+    # card = Card("card", "./cards/card.png")
+    # card2 = Card("card2", "./cards/card2.png")
+    # card2.rect.center = WIDTH // 2, HEIGHT // 2
+    # sprite_group.add((card, card2))
+
+    cards = Card.from_toc("try.toc")
+    card_count = len(cards)
+    [sprite_group.add(card) for card in cards]
+
+    # Health related
     health = HealthSprite(game_container, fontsize=80)
     health.place_health()
-    gui_sprite_group.add(health)
+
+
+    # Shield related
     shield = ShieldSprite(game_container, fontsize=80)
     shield.place_shield()
+
+    # Pack Gui
+    gui_sprite_group.add(health)
     gui_sprite_group.add(shield)
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -270,9 +281,9 @@ def Game() -> None:
                         sprite_group.add(tmp_card)
                     card_count += 1
                 if event.key == pygame.K_m:
-                    print(f"Before {game_container.health}")
+                    print_debug(f"Before {game_container.health}")
                     game_container.set_health(game_container.health - 10)
-                    print(f"After {game_container.health}")
+                    print_debug(f"After {game_container.health}")
             if event.type == pygame.MOUSEBUTTONUP:
                 """
                     Iterate over sprite_group

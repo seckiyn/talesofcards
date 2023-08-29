@@ -2,6 +2,9 @@
 
 *.plan
 *.lorien
+*.png
+*.jpg
+*.jpeg
 
 
 
