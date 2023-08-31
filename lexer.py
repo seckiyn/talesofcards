@@ -16,9 +16,6 @@ class TokenType(Enum):
     SEP = auto()
     STR = auto()
 
-    EQ = auto()
-    VARIABLE = auto()
-    SETVARIABLE = auto()
 
     EOF = auto()
 
@@ -29,6 +26,24 @@ class TokenType(Enum):
 
     LPAREN = auto()
     RPAREN = auto()
+
+    MACRO = auto()
+    ASSIGNMACRO = auto()
+
+    SETVARIABLE = auto()
+    ASSIGN = auto()
+
+    LT = auto()
+    EQ = auto()
+    GT = auto()
+    LTEQ = auto()
+    GTEQ = auto()
+
+    GAMEACTION = auto()
+
+    EXPRESSION = auto()
+
+
 
 
 @dataclass
@@ -42,7 +57,11 @@ class Token:
     column: int
 
 KEYWORDS = {
-        "new": TokenType.NEW
+        "new": TokenType.NEW,
+        "var": TokenType.SETVARIABLE,
+        "gameaction": TokenType.GAMEACTION,
+        "macro": TokenType.ASSIGNMACRO,
+        "exp": TokenType.EXPRESSION
         }
 IGNORE_CHARACTERS = " \n"
 class Lexer:
@@ -111,6 +130,54 @@ class Lexer:
             self.advance()
             return token
 
+    def get_assign_token(self):
+        if self.current_char == "=" and self.peek() == "=":
+            token = Token(TokenType.EQ,
+                          self.current_char,
+                          self.row,
+                          self.column)
+            return token
+        if self.current_char == "=":
+            token = Token(TokenType.ASSIGN,
+                          self.current_char,
+                          self.row,
+                          self.column)
+            return token
+        if self.current_char == "!":
+            token = Token(TokenType.MACRO,
+                          self.current_char,
+                          self.row,
+                          self.column)
+            return token
+    def get_comparison_token(self):
+        if self.current_char == "<" and self.peek() == "=":
+            token = Token(TokenType.LTEQ,
+                          self.current_char,
+                          self.row,
+                          self.column)
+            self.advance()
+            return token
+        if self.current_char == ">" and self.peek() == "=":
+            token = Token(TokenType.GTEQ,
+                          self.current_char,
+                          self.row,
+                          self.column)
+            self.advance()
+            return token
+        if self.current_char == "<":
+            token = Token(TokenType.LT,
+                          self.current_char,
+                          self.row,
+                          self.column)
+            return token
+        if self.current_char == ">":
+            token = Token(TokenType.GT,
+                          self.current_char,
+                          self.row,
+                          self.column)
+            return token
+
+
     def get_next_token(self):
         while self.current_char != None:
             # print(self.current_char)
@@ -160,6 +227,15 @@ class Lexer:
             if self.current_char == "<" and self.peek() == "<":
                 self.comment()
                 continue
+            if self.current_char in "=!":
+                token = self.get_assign_token()
+                self.advance()
+                return token
+            if self.current_char in "<>":
+                token = self.get_comparison_token()
+                self.advance()
+                return token
+
             ex = f"You shouldn't be here: {red(f'{self.current_char}')}"
             raise Exception(ex)
         return Token(TokenType.EOF, None, *(self.row, self.column))

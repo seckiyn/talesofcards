@@ -19,6 +19,8 @@ Name(AST) +
 NameBlock(AST) +
 Card(AST) +
 String(AST) +
+Assign(AST) -
+Variable(AST) -
 """
 
 TEST = """\
@@ -31,6 +33,31 @@ new Card var {name: "Mustafa", yas:12, yasboluuc:12/(2+1),
 newer:3-8
 }
 
+"""
+
+TEST = """\
+var mustafa = 12
+var mustafa = mustafa + 1
+        """
+
+
+TEST = """\
+var mustafa = 0
+macro !addone{
+    var mustafa = mustafa + 1
+}
+!addone <<1>>
+!addone <<2>>
+!addone <<3>>
+!addone <<4>>
+!addone <<5>>
+!addone <<6>>
+!addone <<7>>
+!addone <<8>>
+!addone <<9>>
+!addone <<10>>
+!addone <<11>>
+!addone <<12>>
 """
 class Walker:
     def walk(self, ast):
@@ -104,6 +131,15 @@ class Interpreter(Walker):
         self.global_variables["Cards"][card_name] = dictionary
     def walk_String(self, ast):
         return ast.token.token_value
+    def walk_Assign(self, ast):
+        name = ast.token.token_value
+        expr = self.walk(ast.expr)
+        self.global_variables[name] = expr
+    def walk_Variable(self, ast):
+        name = ast.token.token_value
+        if name in self.global_variables:
+            return self.global_variables[name]
+        raise Exception(f"{name} variable is never assigned")
 
 
 

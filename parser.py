@@ -7,12 +7,38 @@ from lprint import print_debug, red, blue, yellow
 
 
 TEST = """\
+var mustafa = 12
 new Card card_name {
     name: "doofenshmirtz",
     image: "card2.png"
 }
 << This is a comment ya know >>
 """
+
+TEST = """\
+var mustafa = 12
+var mustafa = mustafa + 1
+        """
+
+TEST = """\
+var mustafa = 0
+macro !addone{
+    var mustafa = mustafa + 1
+}
+!addone
+!addone
+!addone
+!addone
+!addone
+!addone
+!addone
+!addone
+!addone
+!addone
+!addone
+!addone
+}
+        """
 
 
 # print_debug(TEST)
@@ -34,7 +60,11 @@ NEW_TYPES = (
         "Card"
         )
 
+
 AST_COUNT = 0
+PROGRAM_COUNT = 0
+
+
 AST_COUNT += 1
 @dataclass
 class AST:
@@ -72,7 +102,7 @@ class Void(AST):
 
 AST_COUNT += 1
 @dataclass
-class SetVariable(AST):
+class Assign(AST):
     """
         AST variable for setting variables
     """
@@ -127,6 +157,7 @@ class String(AST):
     token: Union[Token, AST]
 
 
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
@@ -135,6 +166,7 @@ class Parser:
         self.current_token = None
         self.position = -1
         self.next_token()
+        self.macros = dict()
     def get_tokens(self):
         token_list = list()
         token = self.lexer.get_next_token()
@@ -171,7 +203,11 @@ class Parser:
         ast_list = list()
         while self.current_token.token_type in (
                 TokenType.WORD,
-                TokenType.NEW):
+                TokenType.NEW,
+                TokenType.SETVARIABLE,
+                TokenType.ASSIGNMACRO,
+                TokenType.CLOSE_CBRACKET,
+                TokenType.MACRO):
             # print_debug(f"I'm looking for programs: {self.current_token}")
             if self.current_token.token_type == TokenType.WORD:
                 # print_debug("I've found a WORD token")
@@ -182,11 +218,57 @@ class Parser:
                 ast_list.append(self.new())
                 # print_debug("I've found a NEW token")
                 continue
+            if self.current_token.token_type == TokenType.SETVARIABLE:
+                "var WORD ASSIGN EXP"
+                ast_list.append(self.assign())
+                continue
+            if self.current_token.token_type == TokenType.ASSIGNMACRO:
+                self.assignmacro()
+                continue
+            if self.current_token.token_type == TokenType.CLOSE_CBRACKET:
+                self.eat(TokenType.CLOSE_CBRACKET)
+                return ast_list
+            if self.current_token.token_type == TokenType.MACRO:
+                ast_list.extend(self.macro())
+                continue
             assert False, "You shouldn't be here"
 
         # print_debug(f"{ast_list =}")
+        if (self.position+1 < len(self.tokens)):
+            print(red("There are still tokens to parse"))
+            print(self.tokens[self.position])
         program = Program(ast_list)
         return program
+    def assignmacro(self):
+        self.eat(TokenType.ASSIGNMACRO)
+        print("I'm macroing here")
+        self.eat(TokenType.MACRO)
+        name_token = self.current_token
+        self.eat(TokenType.WORD)
+        self.eat(TokenType.OPEN_CBRACKET)
+        ast_list = self.program()
+        name = name_token.token_value
+        print("I'm here")
+        self.macros[name] = ast_list
+    def macro(self):
+        self.eat(TokenType.MACRO)
+        name_token = self.current_token
+        self.eat(TokenType.WORD)
+        print(self.macros)
+        name = name_token.token_value
+        if name not in self.macros:
+            raise Exception(red(f"{name} is not assigned to a macro before"))
+        ast_of_macro = self.macros[name]
+        return ast_of_macro
+    def assign(self):
+        "var WORD ASSIGN EXP"
+        self.eat(TokenType.SETVARIABLE)
+        name_token = self.current_token
+        self.eat(TokenType.WORD)
+        self.eat(TokenType.ASSIGN)
+        exp = self.exp()
+        return Assign(name_token, exp)
+
 
     def new(self):
         # print_debug("Adding new")
@@ -270,6 +352,10 @@ class Parser:
             token = self.current_token
             self.eat(TokenType.STR)
             return String(token)
+        if self.current_token.token_type == TokenType.WORD:
+            token = self.current_token
+            self.eat(TokenType.WORD)
+            return Variable(token)
 
 
 

@@ -10,6 +10,39 @@ print("hello")
 !Mustafa
 !Mustafa
 
+
+<< 
+game(Health = 80) <<Set health>>
+game(Shield = 80) <<Set shield>>
+game(Health)      <<Get health?>>
+
+game Health 80
+
+>>
+
+<< game Health exp() >>
+<< game GAMEOPTION GAMEEXP >>
+<<
+    GAMEEXP:
+        COMPHEALTH
+        SETHEALTH
+
+Maybe I should parse in game?
+>>
+
+
+<< game Health VARIABLE >>
+<< gameif CONDITION { game GAMEOPTION exp } >>
+
+<<
+Gameaction:
+SETHEALTH
+GETHEALTH
+
+
+>>
+
+
 gameaction Poison {
     Health = exp(20 + deneme + deneme2)
     if Health < exp(deneme){
@@ -42,3 +75,5 @@ new Card snake {
     image: "cards/snake.png",
     gameaction: Poison
 }
+
+
