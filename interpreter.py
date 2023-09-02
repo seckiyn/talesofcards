@@ -45,20 +45,23 @@ TEST = """\
 var mustafa = 0
 macro !addone{
     var mustafa = mustafa + 1
+    new Card hello {
+        name:"Hello",
+        image:"hello.png",
+        mustafa: mustafa
+    }
+
 }
 !addone <<1>>
 !addone <<2>>
-!addone <<3>>
-!addone <<4>>
-!addone <<5>>
-!addone <<6>>
-!addone <<7>>
-!addone <<8>>
-!addone <<9>>
-!addone <<10>>
-!addone <<11>>
-!addone <<12>>
+var mustafa2 = mustafa
+var mustafa = 0
+!addone
+!addone
+!addone
+
 """
+
 class Walker:
     def walk(self, ast):
         # print_debug("AST:", ast)

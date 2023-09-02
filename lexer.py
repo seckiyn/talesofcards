@@ -39,7 +39,8 @@ class TokenType(Enum):
     LTEQ = auto()
     GTEQ = auto()
 
-    GAMEACTION = auto()
+    DEFINEFUNCTION = auto()
+    CALLFUNCTION = auto()
 
     EXPRESSION = auto()
 
@@ -59,7 +60,7 @@ class Token:
 KEYWORDS = {
         "new": TokenType.NEW,
         "var": TokenType.SETVARIABLE,
-        "gameaction": TokenType.GAMEACTION,
+        "func": TokenType.DEFINEFUNCTION,
         "macro": TokenType.ASSIGNMACRO,
         "exp": TokenType.EXPRESSION
         }

@@ -1,7 +1,7 @@
 import sys
 from enum import Enum, auto
 from dataclasses import dataclass
-from typing import Union, List
+from typing import Union, List, Literal
 from lexer import Lexer, TokenType, Token
 from lprint import print_debug, red, blue, yellow
 
@@ -40,6 +40,16 @@ macro !addone{
 }
         """
 
+TEST = """
+
+func Poison() {
+    Health = exp(20 + deneme + deneme2)
+    if Health < exp(deneme){
+        Health = Health - 1
+    }
+}
+
+"""
 
 # print_debug(TEST)
 
@@ -64,6 +74,10 @@ NEW_TYPES = (
 AST_COUNT = 0
 PROGRAM_COUNT = 0
 
+GAMEVARIABLES = (
+        "HEALTH",
+        "SHIELD",
+        )
 
 AST_COUNT += 1
 @dataclass
@@ -157,6 +171,18 @@ class String(AST):
     token: Union[Token, AST]
 
 
+AST_COUNT += 1
+@dataclass
+class DefineFunction(AST):
+    token: Union[Token, AST]
+    namespace: AST
+    block: AST
+
+WORDLITERAL = Literal
+AST_COUNT += 1
+@dataclass
+class NameSpace(AST):
+    namespace: List[Token]
 
 class Parser:
     def __init__(self, lexer):
@@ -207,7 +233,8 @@ class Parser:
                 TokenType.SETVARIABLE,
                 TokenType.ASSIGNMACRO,
                 TokenType.CLOSE_CBRACKET,
-                TokenType.MACRO):
+                TokenType.MACRO,
+                TokenType.DEFINEFUNCTION):
             # print_debug(f"I'm looking for programs: {self.current_token}")
             if self.current_token.token_type == TokenType.WORD:
                 # print_debug("I've found a WORD token")
@@ -231,7 +258,11 @@ class Parser:
             if self.current_token.token_type == TokenType.MACRO:
                 ast_list.extend(self.macro())
                 continue
-            assert False, "You shouldn't be here"
+            if self.current_token.token_type == TokenType.DEFINEFUNCTION:
+                function = self.function()
+                ast_list.append(function)
+                continue
+            assert False, f"{self.current_token}: You shouldn't be here"
 
         # print_debug(f"{ast_list =}")
         if (self.position+1 < len(self.tokens)):
@@ -239,6 +270,36 @@ class Parser:
             print(self.tokens[self.position])
         program = Program(ast_list)
         return program
+    def function(self):
+        self.eat(TokenType.DEFINEFUNCTION)
+        name_token = self.current_token
+        self.eat(TokenType.WORD)
+        block = self.functionblock()
+        return GameAction(name_token, block)
+    def functionnamespace(self):
+        self.eat(LPAREN)
+        """
+            WORD | NULL (, WORD)*
+        """
+        namespace_list = list()
+        if self.current_token.token_type == TokenType.WORD:
+            name_token = self.current_token
+            self.current_token.eat(TokenType.WORD)
+            namespace_list.append(name_token)
+
+        while self.current_token.token_type == TokenType.SEP:
+            self.eat(TokenType.SEP)
+            name_token = self.current_token
+            self.current_token.eat(TokenType.WORD)
+            namespace_list.append(name_token)
+        self.eat(RPAREN)
+        return NameSpace(namespace_list)
+    def functionblock(self):
+        """ TODO: Game should be a ast walker (interpreter)
+            gameSOMETHING = what
+            what = gameSOMETHING + 1
+        """
+
     def assignmacro(self):
         self.eat(TokenType.ASSIGNMACRO)
         print("I'm macroing here")
