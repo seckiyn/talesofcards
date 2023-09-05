@@ -3,7 +3,7 @@ from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Union, List, Literal
 from lexer import Lexer, TokenType, Token
-from lprint import print_debug, red, blue, yellow
+from lprint import print_debug, red, blue, yellow, green
 
 
 TEST = """\
@@ -42,15 +42,63 @@ macro !addone{
 
 TEST = """
 
-func Poison() {
-    Health = exp(20 + deneme + deneme2)
-    if Health < exp(deneme){
+func Poison(tours) {
+    var Health = 20
+    }
+
+Poison(tours="Deneme")
+
+"""
+
+TEST2 = """
+
+func Poison(tours) {
+    Health = 20 + deneme + deneme2 + tours
+    if Health < deneme {
         Health = Health - 1
     }
 }
 
 """
 
+# Function Test
+TEST = """
+<< Define function no arguments >>
+func deffunc1() { var a = 12 }
+<< Define function one argument >>
+func deffunc2(app) { var a = 12 }
+<< Define function multiple arguments >>
+func deffunc3(app, mapp, tapp) { var a = 12 }
+<< Define function with default argument >>
+func deffunc4(app=41) { var a = 12 }
+<< Define function with multiple default argument >>
+func deffunc5(app=51, mapp=52, tapp=53) { var a = 12 }
+
+
+<< Call function no arguments >>
+func1()
+<< Call function one argument >>
+func2(251)
+<< Call function multiple arguments >>
+func3(351, 352, 353)
+<< Call function with default argument >>
+func4(app=451)
+<< Call function with multiple default argument >>
+func5(app=551, mapp=552, tapp=553)
+
+<< Mixed >>
+func6(651, mapp=231, tapp=41)
+
+"""
+
+TEST = """\
+func function(hello, cello) {
+    var mustafa = hello + cello
+}
+
+var what = 12
+function(12, what, hello=12)
+"""
 # print_debug(TEST)
 
 """
@@ -178,11 +226,33 @@ class DefineFunction(AST):
     namespace: AST
     block: AST
 
-WORDLITERAL = Literal
 AST_COUNT += 1
 @dataclass
 class NameSpace(AST):
     namespace: List[Token]
+
+AST_COUNT += 1
+@dataclass
+class DefineName(AST):
+    name: AST
+    default: Union[AST, None]
+
+AST_COUNT += 1
+class CallName(AST):
+    namespace: List[Token]
+
+
+AST_COUNT += 1
+@dataclass
+class CallNameSpace(AST):
+    value: AST
+    name: Union[AST, None]
+
+AST_COUNT += 1
+@dataclass
+class CallFunction(AST):
+    name: AST
+    namespace: AST
 
 class Parser:
     def __init__(self, lexer):
@@ -213,6 +283,13 @@ class Parser:
             print_debug(f"Tokens of these makes the wrong {self.tokens}")
 
         self.current_token = self.tokens[self.position]
+    def peek_token(self):
+        position = self.position + 1
+        if position >= len(self.tokens):
+            print_debug(f"Tokens of these makes the wrong {self.tokens}")
+
+        return self.tokens[position]
+
     def eat(self, token_type):
         # print_debug(blue("[Token]"), self.current_token)
         if self.current_token.token_type == token_type:
@@ -238,6 +315,12 @@ class Parser:
             # print_debug(f"I'm looking for programs: {self.current_token}")
             if self.current_token.token_type == TokenType.WORD:
                 # print_debug("I've found a WORD token")
+                name_token = self.current_token
+                self.eat(TokenType.WORD)
+                if self.current_token.token_type == TokenType.LPAREN:
+                    ast_func = self.functioncall(name_token)
+                    ast_list.append(ast_func)
+                    continue
                 assert False, (red("VARIABLES NOT IMPLEMENTED YET"))
                 continue
             if self.current_token.token_type == TokenType.NEW:
@@ -274,31 +357,104 @@ class Parser:
         self.eat(TokenType.DEFINEFUNCTION)
         name_token = self.current_token
         self.eat(TokenType.WORD)
+        namespace = self.functionnamespace()
         block = self.functionblock()
-        return GameAction(name_token, block)
+        return DefineFunction(name_token, namespace, block)
     def functionnamespace(self):
-        self.eat(LPAREN)
+        self.eat(TokenType.LPAREN)
         """
-            WORD | NULL (, WORD)*
+            (WORD | WORD=EXP) | NULL (, WORD | WORD=EXP)*
         """
         namespace_list = list()
         if self.current_token.token_type == TokenType.WORD:
+            default = None
             name_token = self.current_token
-            self.current_token.eat(TokenType.WORD)
-            namespace_list.append(name_token)
+            self.eat(TokenType.WORD)
+            if self.current_token.token_type == TokenType.ASSIGN:
+                self.eat(TokenType.ASSIGN)
+                default = self.exp()
+                name_ast = DefineName(name_token, default)
+            else:
+                name_ast = DefineName(name_token, default)
+
+
+
+            namespace_list.append(name_ast)
 
         while self.current_token.token_type == TokenType.SEP:
             self.eat(TokenType.SEP)
             name_token = self.current_token
-            self.current_token.eat(TokenType.WORD)
-            namespace_list.append(name_token)
-        self.eat(RPAREN)
+            self.eat(TokenType.WORD)
+            name_ast = None
+            default = None
+            print(green("*"*20))
+            print(green(name_token), green(self.current_token))
+            if self.current_token.token_type == TokenType.ASSIGN:
+                self.eat(TokenType.ASSIGN)
+                default = self.exp()
+                print(blue(self.current_token))
+                name_ast = DefineName(name_token, default)
+            else:
+                name_ast = DefineName(name_token, default)
+            print("Adding", yellow(name_ast))
+            namespace_list.append(name_ast)
+        print(red(self.current_token))
+        self.eat(TokenType.RPAREN)
         return NameSpace(namespace_list)
+    def functioncall_namespace(self):
+        namespace_list = list()
+        name_ast = None
+        print(green("Namespace current token:"), red(self.current_token))
+        self.eat(TokenType.LPAREN)
+        if self.current_token.token_type != TokenType.RPAREN:
+            name = None
+            if self.current_token.token_type == TokenType.WORD and self.peek_token() == TokenType.ASSIGN:
+                name = self.current_token
+                self.eat(TokenType.WORD)
+                self.eat(TokenType.ASSIGN)
+                value = self.exp()
+                name_ast = CallNameSpace(value, name)
+                namespace_list.append(name_ast)
+            value = self.exp()
+            name_ast = CallNameSpace(value, name)
+            namespace_list.append(name_ast)
+
+
+
+
+        while self.current_token.token_type == TokenType.SEP:
+            self.eat(TokenType.SEP)
+            name_ast = None
+            print(green("Namespace current token:"), red(self.current_token))
+            name = None
+            print(red("Comp:"), self.peek_token().token_type, self.current_token.token_type, self.current_token.token_type == TokenType.WORD and self.peek_token() == TokenType.ASSIGN)
+            if self.current_token.token_type == TokenType.WORD and self.peek_token().token_type == TokenType.ASSIGN:
+                name = self.current_token
+                self.eat(TokenType.WORD)
+                self.eat(TokenType.ASSIGN)
+                value = self.exp()
+                name_ast = CallNameSpace(value, name)
+                namespace_list.append(name_ast)
+            else:
+                value = self.exp()
+                name_ast = CallNameSpace(value, name)
+                namespace_list.append(name_ast)
+        print(red(self.current_token))
+        print(namespace_list)
+        self.eat(TokenType.RPAREN)
+        return NameSpace(namespace_list)
+
+
     def functionblock(self):
         """ TODO: Game should be a ast walker (interpreter)
             gameSOMETHING = what
             what = gameSOMETHING + 1
         """
+        ast_list: List
+        self.eat(TokenType.OPEN_CBRACKET)
+        ast_list = self.program()
+        return Block(ast_list)
+
 
     def assignmacro(self):
         self.eat(TokenType.ASSIGNMACRO)
@@ -417,6 +573,14 @@ class Parser:
             token = self.current_token
             self.eat(TokenType.WORD)
             return Variable(token)
+    def functioncall(self, name_token):
+        """FUNCTION_NAME NAMESPACE"""
+        function_name = name_token
+        print("Function name:", yellow(function_name))
+        print("Current token:", yellow(self.current_token))
+        function_namespace = self.functioncall_namespace()
+        ast = CallFunction(function_name, function_namespace)
+        return ast
 
 
 
