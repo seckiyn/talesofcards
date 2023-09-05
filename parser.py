@@ -254,6 +254,11 @@ class CallFunction(AST):
     name: AST
     namespace: AST
 
+AST_COUNT += 1
+@dataclass
+class Return(AST):
+    exp: AST
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer

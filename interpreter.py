@@ -1,6 +1,6 @@
 from parser import Parser, AST_COUNT
 from lexer import TokenType, Lexer
-from lprint import red, blue, yellow, print_debug
+from lprint import red, blue, yellow, print_debug, green
 
 
 
@@ -62,6 +62,20 @@ var mustafa = 0
 
 """
 
+TEST = """\
+func function(hello, cello) {
+    var mustafa = hello + cello
+}
+
+var what = 12
+function(11, what, hello=13)
+
+func deneme(){}
+deneme()
+"""
+
+# TEST = """func function(one, two, tree) {} function()"""
+
 class Walker:
     def walk(self, ast):
         # print_debug("AST:", ast)
@@ -72,14 +86,19 @@ class Walker:
         func = getattr(self, ast_name)
         return func(ast)
 
-assert AST_COUNT == 13, f"You've {red('forgot')}ten to interpret an AST"
+## assert AST_COUNT == 13, f"You've {red('forgot')}ten to interpret an AST"
 class Interpreter(Walker):
     def __init__(self, parser):
         self.global_variables = dict()
         self.global_variables["Cards"] = dict()
+        self.functions = dict()
         self.parser = parser
+        if parser:
+            self.tree = self.parser.parse()
+        else:
+            self.tree = None
     def interpret(self):
-        tree = self.parser.parse()
+        tree = self.tree
         self.walk(tree)
         # print_debug(self.global_variables)
     def walk_BinOp(self, ast):
@@ -113,7 +132,9 @@ class Interpreter(Walker):
     def walk_Variable(self, ast):
         assert False, red("Variable is not implemented yet")
     def walk_Block(self, ast):
-        assert False, red("Block is not implemented yet")
+        to_walk = ast.ast_list
+        for new_ast in to_walk:
+            self.walk(new_ast)
     def walk_Program(self, ast):
         ast_list = ast.ast_list
         for new_ast in ast_list:
@@ -143,6 +164,107 @@ class Interpreter(Walker):
         if name in self.global_variables:
             return self.global_variables[name]
         raise Exception(f"{name} variable is never assigned")
+    def walk_DefineFunction(self, ast):
+        print(ast)
+        name = ast.token.token_value
+        namespace = self.walk(ast.namespace) #
+        block = ast.block
+        self.functions[name] = (namespace, block)
+    def walk_NameSpace(self, ast):
+        namespace = ast.namespace
+        namedefaults = list()
+        for callfunction in namespace:
+            name, default = self.walk(callfunction)
+            namedefaults.append((name, default))
+        return namedefaults
+    def walk_DefineName(self, ast):
+        print(ast)
+        name = ast.name.token_value
+        default = None
+        if ast.default:
+            default = self.walk(default)
+        return name, default
+    def walk_CallFunction(self, ast):
+        print(ast)
+        name = ast.name.token_value
+        namespace = ast.namespace.namespace
+        int_namespace = [self.walk(name) for name in namespace]
+        # TODO: special exceptions
+        # TODO: raise exceptions if no function
+        defined_function_namespace = self.functions[name][0]
+        print(red(int_namespace))
+        print(red(defined_function_namespace))
+        # TODO: exhaustive variable exception
+        defined_function_variables = [i[0] for i in defined_function_namespace]
+        arguments = dict()
+        # TODO: raise exception if positional arg after keyword arg
+        for index, e in enumerate(int_namespace):
+            if e[0] in defined_function_variables:
+                arguments[e[0]] = e[1]
+            else:
+                arguments[defined_function_variables[index]] = e[1]
+
+        print(yellow(arguments))
+        function_walker = FunctionWalker(self, name, arguments)
+        
+
+
+
+
+        print(namespace)
+        print("="*40)
+        # print(self.walk(namespace))
+
+    def walk_CallNameSpace(self, ast):
+        print(ast)
+        name = None
+        if not ast.name:
+            name = None
+        else:
+            name = ast.name.token_value
+        value = self.walk(ast.value)
+        return name, value
+
+
+class FunctionWalker(Interpreter):
+    def __init__(self, interpreter: Interpreter,function_name: str, function_variables:dict):
+        Interpreter.__init__(self, None)
+        function = interpreter.functions[function_name]
+        print(yellow(len(function)))
+        namespace = function[0]
+        namespacenames = [i[0] for i in namespace]
+        block = function[1]
+        last_variables = dict()
+        #TODO: Handle default variables later
+        if len(namespace) != len(function_variables):
+            raise Exception("Variables don't match")
+        print(green(f"{namespace=}\n{function_variables=}\n{block=}"))
+
+        for key, value in function_variables.items():
+            if isinstance(key, int):
+                my_name = namespace[key]
+                last_variables[my_name] = value
+            elif isinstance(key, str):
+                if key in namespacenames:
+                    last_variables[key] = value
+        print(red(str(last_variables)))
+        self.global_variables.update(last_variables)
+        print(self.global_variables)
+        self.tree = block
+        self.interpret()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -152,3 +274,5 @@ if __name__ == "__main__":
     interpreter = Interpreter(parser)
     interpreter.interpret()
     print(interpreter.global_variables)
+    print(interpreter.functions)
+
