@@ -74,7 +74,31 @@ func deneme(){}
 deneme()
 """
 
+# assing variable a function
+TEST = """\
+func a() {}
+var b = a()
+"""
 # TEST = """func function(one, two, tree) {} function()"""
+
+
+TEST = """\
+var c = 12
+
+func a() {
+    var b = 12
+    return b
+}
+
+var b = a()
+var c = 12
+
+func addone(toadd) {return toadd + 1}
+
+var twoplusone = addone(2)
+
+"""
+
 
 class Walker:
     def walk(self, ast):
@@ -82,6 +106,7 @@ class Walker:
         if ast is None:
             print_debug("="*100)
         ast_name = "walk_" + type(ast).__name__
+        print(yellow("Walking"), ast_name, yellow("right now"))
         # if logs.DEBUG: print(ast_name)
         func = getattr(self, ast_name)
         return func(ast)
@@ -99,6 +124,7 @@ class Interpreter(Walker):
             self.tree = None
     def interpret(self):
         tree = self.tree
+        print(yellow("Tree"), tree)
         self.walk(tree)
         # print_debug(self.global_variables)
     def walk_BinOp(self, ast):
@@ -136,6 +162,7 @@ class Interpreter(Walker):
         for new_ast in to_walk:
             self.walk(new_ast)
     def walk_Program(self, ast):
+        print(yellow("Program"), ast)
         ast_list = ast.ast_list
         for new_ast in ast_list:
             self.walk(new_ast)
@@ -206,14 +233,11 @@ class Interpreter(Walker):
 
         print(yellow(arguments))
         function_walker = FunctionWalker(self, name, arguments)
-        
-
-
-
 
         print(namespace)
         print("="*40)
         # print(self.walk(namespace))
+        return function_walker.walkme()
 
     def walk_CallNameSpace(self, ast):
         print(ast)
@@ -228,7 +252,6 @@ class Interpreter(Walker):
 
 class FunctionWalker(Interpreter):
     def __init__(self, interpreter: Interpreter,function_name: str, function_variables:dict):
-        Interpreter.__init__(self, None)
         function = interpreter.functions[function_name]
         print(yellow(len(function)))
         namespace = function[0]
@@ -248,10 +271,16 @@ class FunctionWalker(Interpreter):
                 if key in namespacenames:
                     last_variables[key] = value
         print(red(str(last_variables)))
+        self.global_variables = interpreter.global_variables.copy()
         self.global_variables.update(last_variables)
         print(self.global_variables)
         self.tree = block
+        self.to_return = None
         self.interpret()
+    def walkme(self):
+        return self.to_return
+    def walk_Return(self, ast):
+        self.to_return = self.walk(ast.exp)
 
 
 
@@ -273,6 +302,7 @@ if __name__ == "__main__":
     parser = Parser(lexer)
     interpreter = Interpreter(parser)
     interpreter.interpret()
+    print(red("GLOBAL VARIABLES"))
     print(interpreter.global_variables)
     print(interpreter.functions)
 
