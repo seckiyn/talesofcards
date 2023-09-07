@@ -43,6 +43,7 @@ class TokenType(Enum):
     CALLFUNCTION = auto()
 
     EXPRESSION = auto()
+    RETURN = auto()
 
 
 
@@ -62,7 +63,8 @@ KEYWORDS = {
         "var": TokenType.SETVARIABLE,
         "func": TokenType.DEFINEFUNCTION,
         "macro": TokenType.ASSIGNMACRO,
-        "exp": TokenType.EXPRESSION
+        "exp": TokenType.EXPRESSION,
+        "return": TokenType.RETURN
         }
 IGNORE_CHARACTERS = " \n"
 class Lexer:

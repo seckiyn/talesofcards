@@ -89,6 +89,10 @@ func5(app=551, mapp=552, tapp=553)
 << Mixed >>
 func6(651, mapp=231, tapp=41)
 
+<< Void function and void call >>
+func deffunc6(){}
+deffunc6()
+
 """
 
 TEST = """\
@@ -100,6 +104,16 @@ var what = 12
 function(12, what, hello=12)
 """
 # print_debug(TEST)
+# assing variable a function
+TEST = """\
+func a() {}
+var b = a()
+"""
+
+TEST = """\
+func return1() {return 1}
+var b = return1()
+"""
 
 """
 PROGRAM: (NEW|SETVARIABLE|EXP)
@@ -259,6 +273,8 @@ AST_COUNT += 1
 class Return(AST):
     exp: AST
 
+
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
@@ -316,7 +332,8 @@ class Parser:
                 TokenType.ASSIGNMACRO,
                 TokenType.CLOSE_CBRACKET,
                 TokenType.MACRO,
-                TokenType.DEFINEFUNCTION):
+                TokenType.DEFINEFUNCTION,
+                TokenType.RETURN):
             # print_debug(f"I'm looking for programs: {self.current_token}")
             if self.current_token.token_type == TokenType.WORD:
                 # print_debug("I've found a WORD token")
@@ -326,7 +343,10 @@ class Parser:
                     ast_func = self.functioncall(name_token)
                     ast_list.append(ast_func)
                     continue
-                assert False, (red("VARIABLES NOT IMPLEMENTED YET"))
+                tok = self.current_token
+                pos = tok.column, tok.row
+
+                assert False, (red(f"{tok}:{pos}VARIABLES NOT IMPLEMENTED YET"))
                 continue
             if self.current_token.token_type == TokenType.NEW:
                 self.eat(TokenType.NEW)
@@ -350,12 +370,17 @@ class Parser:
                 function = self.function()
                 ast_list.append(function)
                 continue
+            if self.current_token.token_type == TokenType.RETURN:
+                self.eat(TokenType.RETURN)
+                exp = self.exp()
+                ast_list.append(Return(exp))
+                continue
             assert False, f"{self.current_token}: You shouldn't be here"
 
         # print_debug(f"{ast_list =}")
         if (self.position+1 < len(self.tokens)):
-            print(red("There are still tokens to parse"))
-            print(self.tokens[self.position])
+            print_debug(red("There are still tokens to parse"))
+            print_debug(self.tokens[self.position])
         program = Program(ast_list)
         return program
     def function(self):
@@ -392,24 +417,24 @@ class Parser:
             self.eat(TokenType.WORD)
             name_ast = None
             default = None
-            print(green("*"*20))
-            print(green(name_token), green(self.current_token))
+            print_debug(green("*"*20))
+            print_debug(green(name_token), green(self.current_token))
             if self.current_token.token_type == TokenType.ASSIGN:
                 self.eat(TokenType.ASSIGN)
                 default = self.exp()
-                print(blue(self.current_token))
+                print_debug(blue(self.current_token))
                 name_ast = DefineName(name_token, default)
             else:
                 name_ast = DefineName(name_token, default)
-            print("Adding", yellow(name_ast))
+            print_debug("Adding", yellow(name_ast))
             namespace_list.append(name_ast)
-        print(red(self.current_token))
+        print_debug(red(self.current_token))
         self.eat(TokenType.RPAREN)
         return NameSpace(namespace_list)
     def functioncall_namespace(self):
         namespace_list = list()
         name_ast = None
-        print(green("Namespace current token:"), red(self.current_token))
+        print_debug(green("Namespace current token:"), red(self.current_token))
         self.eat(TokenType.LPAREN)
         if self.current_token.token_type != TokenType.RPAREN:
             name = None
@@ -430,9 +455,9 @@ class Parser:
         while self.current_token.token_type == TokenType.SEP:
             self.eat(TokenType.SEP)
             name_ast = None
-            print(green("Namespace current token:"), red(self.current_token))
+            print_debug(green("Namespace current token:"), red(self.current_token))
             name = None
-            print(red("Comp:"), self.peek_token().token_type, self.current_token.token_type, self.current_token.token_type == TokenType.WORD and self.peek_token() == TokenType.ASSIGN)
+            print_debug(red("Comp:"), self.peek_token().token_type, self.current_token.token_type, self.current_token.token_type == TokenType.WORD and self.peek_token() == TokenType.ASSIGN)
             if self.current_token.token_type == TokenType.WORD and self.peek_token().token_type == TokenType.ASSIGN:
                 name = self.current_token
                 self.eat(TokenType.WORD)
@@ -444,8 +469,8 @@ class Parser:
                 value = self.exp()
                 name_ast = CallNameSpace(value, name)
                 namespace_list.append(name_ast)
-        print(red(self.current_token))
-        print(namespace_list)
+        print_debug(red(self.current_token))
+        print_debug(namespace_list)
         self.eat(TokenType.RPAREN)
         return NameSpace(namespace_list)
 
@@ -463,20 +488,20 @@ class Parser:
 
     def assignmacro(self):
         self.eat(TokenType.ASSIGNMACRO)
-        print("I'm macroing here")
+        print_debug("I'm macroing here")
         self.eat(TokenType.MACRO)
         name_token = self.current_token
         self.eat(TokenType.WORD)
         self.eat(TokenType.OPEN_CBRACKET)
         ast_list = self.program()
         name = name_token.token_value
-        print("I'm here")
+        print_debug("I'm here")
         self.macros[name] = ast_list
     def macro(self):
         self.eat(TokenType.MACRO)
         name_token = self.current_token
         self.eat(TokenType.WORD)
-        print(self.macros)
+        print_debug(self.macros)
         name = name_token.token_value
         if name not in self.macros:
             raise Exception(red(f"{name} is not assigned to a macro before"))
@@ -574,6 +599,11 @@ class Parser:
             token = self.current_token
             self.eat(TokenType.STR)
             return String(token)
+        if self.current_token.token_type == TokenType.WORD and self.peek_token().token_type == TokenType.LPAREN:
+            name_token = self.current_token
+            self.eat(TokenType.WORD)
+            token = self.functioncall(name_token)
+            return token
         if self.current_token.token_type == TokenType.WORD:
             token = self.current_token
             self.eat(TokenType.WORD)
@@ -581,8 +611,8 @@ class Parser:
     def functioncall(self, name_token):
         """FUNCTION_NAME NAMESPACE"""
         function_name = name_token
-        print("Function name:", yellow(function_name))
-        print("Current token:", yellow(self.current_token))
+        print_debug("Function name:", yellow(function_name))
+        print_debug("Current token:", yellow(self.current_token))
         function_namespace = self.functioncall_namespace()
         ast = CallFunction(function_name, function_namespace)
         return ast

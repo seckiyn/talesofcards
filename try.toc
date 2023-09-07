@@ -2,19 +2,16 @@ var deneme = 12
 var deneme2 = "123"
 
 << Macro: Just copy whatever token inside >>
-macro !Mustafa = {
-print("hello")
+macro !Mustafa {
+ var deneme = deneme + 1
 }
 
 
 !Mustafa
 !Mustafa
 
-gameaction Poison {
-    Health = exp(20 + deneme + deneme2)
-    if Health < exp(deneme){
-        Health = Health - 1
-    }
+func Poison() {
+    var Health = 20 + deneme + deneme2
 }
 
 new Card hello {
@@ -40,5 +37,5 @@ new Card bomba2 {
 new Card snake {
     name: "Snakey the Snake",
     image: "cards/snake.png",
-    gameaction: Poison
+    gameaction: Poison()
 }
