@@ -115,6 +115,10 @@ func return1() {return 1}
 var b = return1()
 """
 
+TEST = """\
+var mustafa = 12 + 1 == 12 - -1
+"""
+
 """
 PROGRAM: (NEW|SETVARIABLE|EXP)
     NEW CARD|new
@@ -552,18 +556,45 @@ class Parser:
         return Name(name,exp)
     def exp(self):
         """ exp: (STR|INT|VARIABLE) ((PLUS|MINUS|MUL|DIV) (STR|INT|VARIABLE))*"""
+        node = self.mad()
+        while self.current_token.token_type in (
+                TokenType.EQ,
+                TokenType.NOTEQ,
+                TokenType.GT,
+                TokenType.LT,
+                TokenType.GTEQ,
+                TokenType.LTEQ,
+                ):
+            token = self.current_token
+            if token.token_type == TokenType.EQ:
+                self.eat(TokenType.EQ)
+            if token.token_type == TokenType.NOTEQ:
+                self.eat(TokenType.NOTEQ)
+            if token.token_type == TokenType.GT:
+                self.eat(TokenType.GT)
+            if token.token_type == TokenType.LT:
+                self.eat(TokenType.LT)
+            if token.token_type == TokenType.GTEQ:
+                self.eat(TokenType.GTEQ)
+            if token.token_type == TokenType.LTEQ:
+                self.eat(TokenType.LTEQ)
+            node = BinOp(node, token, self.mad())
+        return node
+
+    def mad(self):
+        """ exp: (STR|INT|VARIABLE) ((PLUS|MINUS|MUL|DIV) (STR|INT|VARIABLE))*"""
         node = self.term()
         while self.current_token.token_type in (
                 TokenType.PLUS,
-                TokenType.MINUS):
+                TokenType.MINUS
+                ):
             token = self.current_token
             if token.token_type == TokenType.PLUS:
                 self.eat(TokenType.PLUS)
             if token.token_type == TokenType.MINUS:
                 self.eat(TokenType.MINUS)
-            node = BinOp(node, token, self.factor())
+            node = BinOp(node, token, self.term())
         return node
-
     def term(self):
         node = self.factor()
         while self.current_token.token_type in (

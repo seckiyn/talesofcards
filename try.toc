@@ -6,12 +6,16 @@ macro !Mustafa {
  var deneme = deneme + 1
 }
 
+if 12 == 12{
+!Mustafa
+}
+
 
 !Mustafa
 !Mustafa
 
-func Poison() {
-    var Health = 20 + deneme + deneme2
+func Poison(deneme4) {
+    var Health = 20 + deneme + deneme4
 }
 
 new Card hello {
@@ -37,5 +41,5 @@ new Card bomba2 {
 new Card snake {
     name: "Snakey the Snake",
     image: "cards/snake.png",
-    gameaction: Poison()
+    gameaction: Poison(12)
 }

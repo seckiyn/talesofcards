@@ -101,7 +101,12 @@ var twoplusone = addone(2)
 
 TEST = """\
 var kustafa = -1
-<<var mustafa = 12 + 1 == 12 - -1>>
+var mustafa = 12 + 1 == 12 - -1
+var lustafa = 1 < 2
+var nustafa = 1 > 2
+var oustafa = 1 <= 2
+var uustafa = 1 >= 2
+var pustafa = 1 != 2
 """
 
 
@@ -145,6 +150,18 @@ class Interpreter(Walker):
             return left * right
         if operation == TokenType.DIV:
             return left / right
+        if operation == TokenType.EQ:
+            return left == right
+        if operation == TokenType.NOTEQ:
+            return left != right
+        if operation == TokenType.GTEQ:
+            return left >= right
+        if operation == TokenType.LTEQ:
+            return left <= right
+        if operation == TokenType.GT:
+            return left > right
+        if operation == TokenType.LT:
+            return left < right
         ex = f"There's no operation called {red(operation)}"
         raise Exception(ex)
     def walk_UnaryOp(self, ast):

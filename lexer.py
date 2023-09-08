@@ -35,15 +35,19 @@ class TokenType(Enum):
 
     LT = auto()
     EQ = auto()
+    NOTEQ = auto()
     GT = auto()
     LTEQ = auto()
     GTEQ = auto()
+
 
     DEFINEFUNCTION = auto()
     CALLFUNCTION = auto()
 
     EXPRESSION = auto()
     RETURN = auto()
+
+    IF = auto()
 
 
 
@@ -64,7 +68,8 @@ KEYWORDS = {
         "func": TokenType.DEFINEFUNCTION,
         "macro": TokenType.ASSIGNMACRO,
         "exp": TokenType.EXPRESSION,
-        "return": TokenType.RETURN
+        "return": TokenType.RETURN,
+        "if": TokenType.IF
         }
 IGNORE_CHARACTERS = " \n"
 class Lexer:
@@ -136,9 +141,17 @@ class Lexer:
     def get_assign_token(self):
         if self.current_char == "=" and self.peek() == "=":
             token = Token(TokenType.EQ,
-                          self.current_char,
+                          "==",
                           self.row,
                           self.column)
+            self.advance()
+            return token
+        if self.current_char == "!" and self.peek() == "=":
+            token = Token(TokenType.NOTEQ,
+                          "!=",
+                          self.row,
+                          self.column)
+            self.advance()
             return token
         if self.current_char == "=":
             token = Token(TokenType.ASSIGN,
@@ -249,4 +262,14 @@ class Lexer:
         self.advance() # past other >
 
 
+TEST = """\
+if 12 != 12 { var mustafa = 12 }
+"""
 
+if __name__ == "__main__":
+    lexer = Lexer(TEST)
+    token = lexer.get_next_token()
+    print(token)
+    while token.token_value:
+        token = lexer.get_next_token()
+        print(token)
