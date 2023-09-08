@@ -99,6 +99,11 @@ var twoplusone = addone(2)
 
 """
 
+TEST = """\
+var kustafa = -1
+<<var mustafa = 12 + 1 == 12 - -1>>
+"""
+
 
 class Walker:
     def walk(self, ast):
@@ -144,10 +149,10 @@ class Interpreter(Walker):
         raise Exception(ex)
     def walk_UnaryOp(self, ast):
         right = self.walk(ast.right_token)
-        operation = ast.operation
-        if operation == TokenType.PLUS:
+        operation = ast.op_token
+        if operation.token_type == TokenType.PLUS:
             return right
-        if operation == TokenType.MINUS:
+        if operation.token_type == TokenType.MINUS:
             return -1 *right
     def walk_Integer(self, ast):
         return int(ast.token.token_value)
