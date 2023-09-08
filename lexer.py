@@ -48,6 +48,8 @@ class TokenType(Enum):
     RETURN = auto()
 
     IF = auto()
+    ELSEIF = auto()
+    ELSE = auto()
 
 
 
@@ -69,7 +71,9 @@ KEYWORDS = {
         "macro": TokenType.ASSIGNMACRO,
         "exp": TokenType.EXPRESSION,
         "return": TokenType.RETURN,
-        "if": TokenType.IF
+        "if": TokenType.IF,
+        "elseif": TokenType.ELSEIF,
+        "else": TokenType.ELSE
         }
 IGNORE_CHARACTERS = " \n"
 class Lexer:
@@ -263,9 +267,23 @@ class Lexer:
 
 
 TEST = """\
-if 12 != 12 { var mustafa = 12 }
+if 12 == 12 { var mustafa = 12 }
 """
 
+TEST = """\
+if 12 == 11 {
+    var result = "12 equals 11"
+}
+elseif 12 == 10 {
+    var result = "12 equals 10"
+}
+elseif 12 == 9 {
+    var result = "12 equals 9"
+}
+else {
+    var result = "Nothing worked"
+}
+"""
 if __name__ == "__main__":
     lexer = Lexer(TEST)
     token = lexer.get_next_token()

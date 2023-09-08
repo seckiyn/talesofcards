@@ -109,6 +109,39 @@ var uustafa = 1 >= 2
 var pustafa = 1 != 2
 """
 
+TEST = """\
+if 12 == 12 { var mustafa = 12 }
+"""
+
+TEST = """\
+if 12 == 11 {
+    var result = "12 equals 11"
+}
+elseif 12 == 10 {
+    var result = "12 equals 10"
+}
+elseif 12 == 9 {
+    var result = "12 equals 9"
+}
+else {
+    var result = "Nothing worked"
+}
+"""
+
+TEST = """\
+
+func compare(a, b) { return a < b }
+
+func compare2(a, b){
+    if compare(a, b) { var result = "a < b" }
+    elseif a > b { var result = "a > b" }
+    else { var result = "a = b" }
+    return result
+}
+
+var mustafa = compare2(12, 12)
+"""
+
 
 class Walker:
     def walk(self, ast):
@@ -270,11 +303,33 @@ class Interpreter(Walker):
             name = ast.name.token_value
         value = self.walk(ast.value)
         return name, value
+    def walk_IF(self, ast):
+        condition = self.walk(ast.exp)
+        if condition:
+            self.walk(ast.block)
+        elif len(ast.elseifs) != 0:
+            for elseif_ast in ast.elseifs:
+                print(red(f"Looking at {elseif_ast}"))
+                if self.walk(elseif_ast):
+                    return
+            print(green(f"{ast.else_}"))
+            self.walk(ast.else_)
+        else:
+            print(green(f"{ast.else_}"))
+            self.walk(ast.else_)
+    def walk_ELSEIF(self, ast):
+        condition = self.walk(ast.exp)
+        if condition:
+            self.walk(ast.block)
+            return True
+        return False
+
 
 
 class FunctionWalker(Interpreter):
     def __init__(self, interpreter: Interpreter,function_name: str, function_variables:dict):
         function = interpreter.functions[function_name]
+        self.functions = interpreter.functions
         print(yellow(len(function)))
         namespace = function[0]
         namespacenames = [i[0] for i in namespace]

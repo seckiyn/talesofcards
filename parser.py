@@ -119,6 +119,24 @@ TEST = """\
 var mustafa = 12 + 1 == 12 - -1
 """
 
+TEST = """\
+if 12 == 12 { var mustafa = 12 }
+"""
+
+TEST = """\
+if 12 == 11 {
+    var result = "12 equals 11"
+}
+elseif 12 == 10 {
+    var result = "12 equals 10"
+}
+elseif 12 == 9 {
+    var result = "12 equals 9"
+}
+else {
+    var result = "Nothing worked"
+}
+"""
 """
 PROGRAM: (NEW|SETVARIABLE|EXP)
     NEW CARD|new
@@ -277,7 +295,20 @@ AST_COUNT += 1
 class Return(AST):
     exp: AST
 
+AST_COUNT += 1
+@dataclass
+class IF(AST):
+    exp: AST
+    block: AST
+    elseifs: List[AST]
+    else_: AST
 
+
+AST_COUNT += 1
+@dataclass
+class ELSEIF(AST):
+    exp: AST
+    block: AST
 
 class Parser:
     def __init__(self, lexer):
@@ -337,7 +368,8 @@ class Parser:
                 TokenType.CLOSE_CBRACKET,
                 TokenType.MACRO,
                 TokenType.DEFINEFUNCTION,
-                TokenType.RETURN):
+                TokenType.RETURN,
+                TokenType.IF):
             # print_debug(f"I'm looking for programs: {self.current_token}")
             if self.current_token.token_type == TokenType.WORD:
                 # print_debug("I've found a WORD token")
@@ -379,6 +411,11 @@ class Parser:
                 exp = self.exp()
                 ast_list.append(Return(exp))
                 continue
+            if self.current_token.token_type == TokenType.IF:
+                self.eat(TokenType.IF)
+                ast = self.ifandblock()
+                ast_list.append(ast)
+                continue
             assert False, f"{self.current_token}: You shouldn't be here"
 
         # print_debug(f"{ast_list =}")
@@ -387,6 +424,24 @@ class Parser:
             print_debug(self.tokens[self.position])
         program = Program(ast_list)
         return program
+    def ifandblock(self):
+        exp = self.exp()
+        block = self.functionblock()
+        elseif = list()
+        else_ = Void()
+        while self.current_token.token_type == TokenType.ELSEIF:
+            self.eat(TokenType.ELSEIF)
+            elseif.append(self.elseifandblock())
+        if self.current_token.token_type == TokenType.ELSE:
+            self.eat(TokenType.ELSE)
+            else_ = self.functionblock()
+
+        return IF(exp, block, elseif, else_)
+    def elseifandblock(self):
+        exp = self.exp()
+        block = self.functionblock()
+        return ELSEIF(exp, block)
+
     def function(self):
         self.eat(TokenType.DEFINEFUNCTION)
         name_token = self.current_token
