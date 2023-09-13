@@ -130,15 +130,15 @@ class GameContainer:
 
     def do_command(self, command_name, *args):
         ...
-    def set_health(self, new_health):
+    def set_health(self, new_health: int):
         self.health = new_health
         self.healthsprite.set_health(new_health)
-    def set_shield(self, new_shield):
+    def set_shield(self, new_shield: int):
         self.shield = new_shield
         self.shieldsprite.set_shield(new_shield)
 
 class HealthSprite(pygame.sprite.Sprite):
-    def __init__(self, game_container: GameContainer, fontname="", fontsize=30):
+    def __init__(self, game_container: GameContainer, fontname="", fontsize=80):
         pygame.sprite.Sprite.__init__(self)
         self.game_container = game_container
         self.game_container.healthsprite = self
@@ -154,14 +154,13 @@ class HealthSprite(pygame.sprite.Sprite):
         self.rect.center = (x, y)
     def set_health(self, new_health: int):
         self.health = self.game_container.health
-        print(f"{self.health=}")
         self.image = self.my_font.render(str(self.health), True, "lightgreen")
         self.rect = self.image.get_rect()
         self.place_health()
 
 
 class ShieldSprite(pygame.sprite.Sprite):
-    def __init__(self, game_container: GameContainer, fontname="", fontsize=30):
+    def __init__(self, game_container: GameContainer, fontname="", fontsize=80):
         pygame.sprite.Sprite.__init__(self)
         self.game_container = game_container
         self.game_container.shieldsprite = self
@@ -177,7 +176,6 @@ class ShieldSprite(pygame.sprite.Sprite):
         self.rect.center = (x, y)
     def set_shield(self, new_shield: int):
         self.shield = self.game_container.shield
-        print(f"{self.shield=}")
         self.image = self.my_font.render(str(self.shield), True, "white")
         self.rect = self.image.get_rect()
         self.place_shield()

@@ -140,6 +140,14 @@ func compare2(a, b){
 }
 
 var mustafa = compare2(12, 12)
+
+var mustafa = 12
+
+func setmustafa(towhat){
+    return mustafa + 1
+}
+
+var mustafa = setmustafa(12)
 """
 
 
@@ -170,6 +178,9 @@ class Interpreter(Walker):
         print(yellow("Tree"), tree)
         self.walk(tree)
         # print_debug(self.global_variables)
+    def evaluate(self, to_eval: str):
+        self.tree = Parser(Lexer(to_eval)).parse()
+        self.interpret()
     def walk_BinOp(self, ast):
         left = self.walk(ast.left_token)
         right = self.walk(ast.right_token)
@@ -379,6 +390,7 @@ if __name__ == "__main__":
     parser = Parser(lexer)
     interpreter = Interpreter(parser)
     interpreter.interpret()
+    interpreter.evaluate('setmustafa("Hello")')
     print(red("GLOBAL VARIABLES"))
     print(interpreter.global_variables)
     print(interpreter.functions)
